@@ -4,8 +4,11 @@ Invasit is an automatizated bash script to invade WPA2 networks with wordlist me
 It was made in a Kali 2.0 bash, so it works fine on it, for sure. 
 
 How to:
+
 \# https://github.com/valvesss/invasit-network.git
+
 \# cd invasit-network
+
 \# sudo bash invasit.sh
 
 Contact: vitoralvesinfo@gmail.com
