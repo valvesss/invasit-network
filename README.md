@@ -5,7 +5,7 @@ It was made in a Kali 2.0 bash, so it works fine on it, for sure.
 
 How to:
 
-\# https://github.com/valvesss/invasit-network.git
+\# git clone https://github.com/valvesss/invasit-network.git
 
 \# cd invasit-network
 
