@@ -11,6 +11,4 @@ How to:
 
 \# sudo bash invasit.sh
 
-Made by me, valvesss and a greatfull help from thales faggiano
-
-Contact: vitoralvesinfo@gmail.com
+Contact: sleepyhollow.lockwood@protonmail.ch
