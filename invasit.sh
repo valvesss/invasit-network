@@ -12,6 +12,7 @@ MONMODE(){
 nic=mon0
 iwconfig > nic.txt
 nicreal=$(cat nic.txt | awk 'NR==1{print $1}')
+rm -rf nic.txt
 if iwconfig | grep -q $nic ; then
 	clear
 	echo''
