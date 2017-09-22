@@ -10,13 +10,15 @@ MAIN(){
 # 1) Create NIC mon0
 MONMODE(){
 nic=mon0
+iwconfig > nic.txt
+nicreal=$(cat nic.txt | awk 'NR==1{print $1}')
 if iwconfig | grep -q $nic ; then
 	clear
 	echo''
 	SOLARQ
 else
 	clear
-	iw dev wlan0 interface add $nic type monitor &> /dev/null
+	iw dev $nicreal interface add $nic type monitor &> /dev/null
 	SOLARQ 
 fi
 }
