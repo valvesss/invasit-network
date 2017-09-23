@@ -27,14 +27,19 @@ fi
 # 2) Ask for the name of all files the will be generated
 SOLARQ(){
 clear
-echo '1) Set the name of the files:'
+echo 'Note: this terminal will only be ready after the key is found
+echo '########################################################'
+echo '# 1) Set the name of the files that will be generated: #'
+echo '########################################################'
 read name
 GERTAB
 }
 
 # 3) Generate table with all WPA networks found
 GERTAB(){
-echo "2) When you find the target network, press CTRL+C."
+echo '########################################################'
+echo "# 2) When you find the target network, press CTRL+C. "
+echo '########################################################'
 xterm -title $name -e airodump-ng --encrypt WPA $nic -w $name -o csv
 clear
 COMDAD
