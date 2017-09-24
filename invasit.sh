@@ -31,9 +31,9 @@ echo "	I  N N      N   V           V  A A        S         I      T"
 sleep 0.5
 echo "	I  N  N     N    V         V  A   A       S         I      T"
 sleep 0.5
-echo "	I  N   N    N     V       V  A     A      S         I      T"
+echo "	I  N   N    N     V       V  A     A      SSSSSSSS  I      T"
 sleep 0.5
-echo "	I  N    N   N      V     V  AAAAAAAAA     SSSSSSSS  I      T"
+echo "	I  N    N   N      V     V  AAAAAAAAA            S  I      T"
 sleep 0.5
 echo "	I  N     N  N       V   V  A         A           S  I      T"
 sleep 0.5
