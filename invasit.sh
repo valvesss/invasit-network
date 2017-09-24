@@ -45,7 +45,6 @@ echo "	v1 / by: valvesss / support: sleepyhollow.lockwood@protonmail.ch"
 SOLARQ
 }
 
-
 # 2) Ask for the name of all files the will be generated
 SOLARQ(){
 echo ""
@@ -109,7 +108,7 @@ rm -rf $name-01.csv
 WORDLIST
 }
 
-# 8) Search wordlist and verify if don't exist
+# 7) Search wordlist and verify if don't exist
 WORDLIST(){
 echo ""
 echo "###################################"
@@ -132,7 +131,7 @@ done
 HANDSHAKE
 }
 
-# 7) Start the handshake capture
+# 8) Start the handshake capture
 HANDSHAKE(){
 echo ""
 echo "#######################################"
