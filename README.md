@@ -11,6 +11,8 @@ How to:
 
 \# cd invasit-network
 
+\# chmod +x invasit.sh
+
 \# sudo bash invasit.sh
 
 Contact: sleepyhollow.lockwood@protonmail.ch
