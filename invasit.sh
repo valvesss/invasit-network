@@ -196,7 +196,7 @@ done
 AIRCRACK
 }
 
-# 8) Decryptograph the password
+# 9) Decryptograph the password
 AIRCRACK(){
 sleep 5
 a=0
@@ -239,7 +239,7 @@ aircrack-ng $name-clean.cap -w $path &
 END
 }
 
-# 9) Reinicialize network services and delete the nic created
+# 10) Reinicialize network services and delete the nic created
 END(){
 iwconfig | grep Monitor > monitor.txt &> /dev/null
 sleep 0.01
