@@ -15,3 +15,4 @@ How to:
 \# sudo bash invasit.sh
 
 Contact: sleepyhollow.lockwood@protonmail.ch
+# For didatic purposes, domestic use and just if you are allowed!
