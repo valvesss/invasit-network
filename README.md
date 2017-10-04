@@ -14,5 +14,8 @@ How to:
 
 \# sudo bash invasit.sh
 
+Note: Some parts/ideas of the code were retrieved from Fluxion.
+https://github.com/FluxionNetwork/fluxion
+
 Contact: sleepyhollow.lockwood@protonmail.ch
-# For didatic purposes, domestic use and just if you are allowed!
+
