@@ -235,7 +235,9 @@ done
 rm -rf $mac
 kill $(ps aux | grep 'xterm' | awk '{print $2}') &> /dev/null
 wpaclean $name-clean.cap $name-01.cap &> /dev/null
-aircrack-ng $name-clean.cap -w $path &
+aircrack-ng $name-clean.cap -w $path
+echo "Press Enter to continue..."
+read enter
 END
 }
 
