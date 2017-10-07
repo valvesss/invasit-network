@@ -1,0 +1,59 @@
+Welcome to INVASIT commented!
+
+Well... Like you're now, I've been at your position. Dude, all this fucking scripts programmers NEVER let nothing commented, explicated or whatever. I'll try to change this statement, this taboo, break a hoodoo about this. This is a text file to explain briefly about what I've done in INVASIT, hope you enjoy and mainly, LEARN. After reading, try to change, remove, add, do it in your way, redistribute and through this WE CAN make the world a better place. Any doubts, sent me a email and I'll try to help you, thanks!
+
+////////////////// STARTING COMMENTS HERE /////////////////////////////////////////////////
+
+1. PRE-CHECKS
+
+// Pre-checks how it means its supoosed to check if the user is root or not at first moment, and else if the user is using a graphical session or not, both points are necessary to execute INVASIT. We need root basically because the tools of family air{crack-ng,eplay-ng,odump-ng,mon-ng} and a graphical session for the terminals we are about to open. \\
+// 1.1 Root ID is always 0 (zero) so if the user ID were anything else besides 0 (zero), the script will stop. \\
+// 1.2 For the graphical session, if the display variable shows nothings, the script will stop. \\
+ _____________________________________________________________________________________________
+|
+|###################### PRE-CHECKS ############################
+|
+| [1.1] if [[ $EUID -ne 0 ]]; then
+|        echo -e "\e[You don't have admin privilegies, execute the script as root.""\e[0m"""
+|        exit 1
+|fi
+|
+|
+| [1.2] if [ -z "${DISPLAY:-}" ]; then
+|    echo -e "\e[The script should be exected inside a X (graphical) session.""\e[0m"""
+|    exit 1
+|fi
+|______________________________________________________________________________________________
+
+2. SYSTEM REQUIREMENTS
+ 
+// No secrets here, if the tool weren't find at the system, the loop will return 1 and the script will stop. We do this by using the hash process. (man hash)\\
+// 2.1 If hash returns error about the non existence of any tool, the script will stop, else OK. I also set a sleeptime that will be used, just beauty feature. \\ 
+ _____________________________________________________________________________________________
+|
+|##################### SYSTEM REQUIREMENTS ####################
+|function systemrequirements {
+|	clear
+|	sleeptime=1
+|        echo -ne "aircrack-ng....."
+|        [2.1] if ! hash aircrack-ng 2>/dev/null; then
+|                echo -e "Not installed"
+|                exit=1
+|        else
+|                echo -e "OK!"
+|        fi
+|        sleep $sleeptime
+|______________________________________________________________________________________________
+
+3. SHORCUTS 
+
+// The most used tools sometimes have to had some parameters changed, so if they are upside it helps me to do it. Else, how theirs name are too long, this might create some confusion at our head. \\ 
+// 3.1 I had to create variables to save the names, always using single apostrophes ''. \\
+
+ _____________________________________________________________________________________________
+|###################### SHORTCUTS #############################
+|
+|[3.1] airodump1='xterm -title $name -e airodump-ng --encrypt WPA $nic -w $name -o csv'
+|_____________________________________________________________________________________________
+
+4. START 
