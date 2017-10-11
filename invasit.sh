@@ -322,9 +322,9 @@ mac=$name.lst
 ATTAIR
 }
 
-# 6) Attack using aireplay-ng
+# 5) Attack using aireplay-ng
 function ATTAIR {
-echo -e "\n# 4) Scanning $networkname to get the HANDSHAKE. #"
+echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
 # Attack clients host until find handshake packet
 i=1
 	while [ $i -le $nr ]; do
@@ -351,9 +351,9 @@ rm -rf $mac
 WORDLIST
 }
 
-# 7) Search wordlist and verify if don't exist
+# 6) Search wordlist and verify if don't exist
 function WORDLIST {
-echo -e "\n# 5) Type the wordlist full path: #" 
+echo -e "\n# 4) Type the wordlist full path: #" 
 $userpath
 read path
 a=0
@@ -370,7 +370,7 @@ done
 AIRCRACK
 }
 
-# 8) Decryptograph the password
+# 7) Decryptograph the password
 function AIRCRACK {
 # Clean handshake packet
 wpaclean $name-handshake.cap $name-01.cap &> /dev/null
@@ -398,7 +398,7 @@ read enter
 END
 }
 
-# 9) Reinicialize network services and delete the nic created
+# 8) Reinicialize network services and delete the nic created
 function END {
 echo "[+] Deleting network card if created..."
 if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
