@@ -49,7 +49,7 @@ nr=0
 }
 
 # Time for most functions
-st='0.2'
+st='0.5'
 
 # Colors for echo
 RED='\033[0;31m'
