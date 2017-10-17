@@ -1,19 +1,6 @@
 #!/bin/bash
 
-# Invasit version 1.1 || by: valvesss
-
-###################### PRE-CHECKS ############################
-## From Fluxion
-
-if [[ $EUID -ne 0 ]]; then
-        echo -e "\e[You don't have admin privilegies, execute the script as root.""\e[0m"""
-        exit 1
-fi
-
-if [ -z "${DISPLAY:-}" ]; then
-    echo -e "\e[The script should be exected inside a X (graphical) session.""\e[0m"""
-    exit 1
-fi
+# Invasit version 1.2 || by: valvesss
 
 ################## SHORTCUTS/STUFFS ##########################
 
@@ -66,73 +53,6 @@ userpath="echo -n -e `whoami`@`hostname`:`pwd`#\t\b"
 trap ctrl_c INT
 function ctrl_c(){
 	END
-}
-
-##################### SYSTEM REQUIREMENTS ####################
-## From Fluxion
-function systemrequirements {
-	clear
-	echo -e "	Checking system requirements...\n"
-        echo -ne "	aircrack-ng....."
-        if ! hash aircrack-ng 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        echo -ne "	aireplay-ng....."
-        if ! hash aireplay-ng 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        echo -ne "	airmon-ng......."
-        if ! hash airmon-ng 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        echo -ne "	airodump-ng....."
-        if ! hash airodump-ng 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        echo -ne "	awk............."
-        if ! hash awk 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        echo -ne "	xterm..........."
-        if ! hash xterm 2>/dev/null; then
-                echo -e "Not installed"
-                exit=1
-        else
-                echo -e "OK!"
-        fi
-        sleep $st
-
-        if [ "$exit" = "1" ]; then
-        exit 1
-        fi
-	echo -e "\nSystem ready!"
-	sleep $st
-	setresolution
 }
 
 ################# WINDOWS + RESOLUTIONS #####################
@@ -355,14 +275,14 @@ echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
 function WORDLIST {
 echo -e "\n# 4) Type the wordlist full path: #" 
 $userpath
-read path
+read -e path
 a=0
 while [ $a -eq 0  ]
 do
 	if [ !  -f $path ]; then
 		echo -e "\n# Wordlist not found, try again: #"
 		$userpath
-		read path
+		read -e path
 	else
 		a=1
 	fi
@@ -423,4 +343,4 @@ echo -e "##	${GREEN}ENJOY THE HACKING, ${RED}I N V A S I T ${GREEN}EVERYWHERE${N
 echo "############################################################"
 exit
 }
-systemrequirements
+setresolution
