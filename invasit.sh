@@ -232,6 +232,8 @@ name=$networkname"_"$bssidtarget
 					WORDLIST
 				fi	
 		fi
+	else
+		ESPSCN
 	fi
 }
 
