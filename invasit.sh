@@ -43,7 +43,7 @@ nr=0
 }
 
 # Time for most functions
-st='0.3'
+st='0.1'
 
 # Colors for echo
 RED='\033[0;31m'
@@ -275,6 +275,7 @@ function EDTCHN {
 				WORDLIST
 			fi	
 	fi
+
 	ESPSCN
 }
 
@@ -397,7 +398,7 @@ function AIRCRACK {
 
 function END {
 
-	# Delete the mon0 network
+	# Delete the mon0 virtual interface
 
 	echo "[+] Deleting network card if created..."
 
@@ -436,6 +437,7 @@ echo -e "##	${GREEN}ENJOY THE HACKING, ${YELLOW}I N V A S I T ${GREEN}EVERYWHERE
 echo "############################################################"
 
 # Finish the script
+
 	exit
 
 }
