@@ -181,20 +181,25 @@ MONMODE
 
 function MONMODE {
 
+# The name of the virtual nic the will be created
+
 	nic=mon0
 
-# Kill all process the could couse trouble to aircrack family
+# User select the real nic to be used
 
 	read -e -p $'\x0a# Select the network card you want to use [enter for wlan0]: ' nicreal
-		
-	while ! iwconfig 2>/dev/null | grep -w -q $nicreal ; do
-		read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
-	done
 
 	if [ -z "$nicreal" ] ; then
 		nicreal=wlan0
-		airmon-ng check kill &> /dev/null &
+	else
+		while ! iwconfig 2>/dev/null | grep -w -q $nicreal ; do
+			read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
+		done
 	fi
+
+# Kill all process the could couse trouble to aircrack family
+
+	airmon-ng check kill &> /dev/null &
 
 # Check if exist the mon0 nic, else, create and activate
 
