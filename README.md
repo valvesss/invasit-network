@@ -15,7 +15,7 @@ How to:
 
 \# ./invasit.sh
 
-Note: Some ideas of the code were retrieved from Fluxion.
+Note: The part of the code that was retrieved from fluxion is specified inside the code.
 https://github.com/FluxionNetwork/fluxion
 
 Contact: sleepyhollow.lockwood@protonmail.ch
