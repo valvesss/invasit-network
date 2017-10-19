@@ -280,7 +280,7 @@ cat auxfile4 auxfile3 > auxfile5
 	bssidtarget=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $2}')
 	channel=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $3}')
 	networkname=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $5 $6 $7 $8}')
-	#rm -rf auxfile*
+	rm -rf auxfile*
 	rm -rf $name-01.kismet.csv
 	name=$networkname"_"$bssidtarget
 
@@ -437,7 +437,7 @@ function END {
 	rm -rf $name-01.cap &>/dev/null
 	rm -rf $name.lst &>/dev/null
 	rm -rf target-0* &>/dev/null
-	#rm -rf auxfile* &>/dev/null
+	rm -rf auxfile* &>/dev/null
 	rm -rf $name-passwd.txt &>/dev/null
 	sleep $st
 
