@@ -400,7 +400,7 @@ function AIRCRACK {
 # Notice if sucess or not
 
 	if [ -s ./passwords/$name-password.txt ]; then
-		echo -e "\n# Sucess !! The password is: ${BLUE} `cat ./passwords/$name-password.txt` ${NC} !!! #\n"
+		echo -e "\n# Sucess !! The password is: ${RED} `cat ./passwords/$name-password.txt` ${NC} !!! #\n"
 	else
 		clear
 		read -e -p $'\x0a# Sad news but... This wordlist haven\'t the password =/... Try again with a new one? [y/n]: ' opt
