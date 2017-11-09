@@ -69,7 +69,7 @@ function ctrl_c () {
 ## From Fluxion
 
 # Windows + Resolution
-function setresolution {
+function SETRES  {
 
         function resA {
 
@@ -149,39 +149,37 @@ case $detectedresolution in
         "1366x768"  ) resF ;;
                   * ) resA ;;
 esac
-INTRO
 }
 
 ######################### START ##############################
 
 # INTRODUCTION
-function INTRO {
+function INTROD {
 clear
-echo ""
-echo -e "	${GREEN}I  NN       N  V             V  A         SSSSSSSS  I  TTTTTTTTT"
+echo -e "    ${GREEN}                                                                    ___"
+echo -e "   I  NN       N  ${BLUE}V             V  A${NC}         ${GREEN}SSSSSSSS  I  TTTTTTTTT"'    /o o\ '
 sleep $st
-echo -e "	I  N N      N   V           V  A A        S         I      T"
+echo -e "   I  N N      N   ${BLUE}V           V  A A${NC}        ${GREEN}S         I      T"'        \ v / '
 sleep $st
-echo -e "	I  N  N     N    V         V  A   A       S         I      T"
+echo -e "   I  N  N     N    ${BLUE}V         V  A   A${NC}       ${GREEN}S         I      T"'         |#|  '
 sleep $st
-echo -e "	I  N   N    N     V       V  A     A      SSSSSSSS  I      T"
+echo -e "   I  N   N    N     ${BLUE}V       V  A     A${NC}      ${GREEN}SSSSSSSS  I      T"'         |#|  '
 sleep $st
-echo -e "	${YELLOW}I  N    N   N      V     V  AAAAAAAAA            S  I      T"
+echo -e "   ${YELLOW}I  N    N   N      ${BLUE}V     V  AAAAAAAAA${NC}            ${YELLOW}S  I      T""       __|_|__"
 sleep $st
-echo -e "	I  N     N  N       V   V  A         A           S  I      T"
+echo -e "   I  N     N  N       ${BLUE}V   V  A         A${NC}           ${YELLOW}S  I      T"'      /=== ===\'
 sleep $st
-echo -e "	I  N      N N        V V  A           A          S  I      T"
+echo -e "   I  N      N N        ${BLUE}V V  A           A${NC}          ${YELLOW}S  I      T"'     /= === ===\'
 sleep $st
-echo -e "	I  N       NN         V  A             A  SSSSSSSS  I      T${NC}"
+echo -e "   I  N       NN         ${BLUE}V  A             A${NC}  ${YELLOW}SSSSSSSS  I      T"'     \_________/'${NC}
 sleep $st
-echo -e "								${RED}v1.2${NC}"
-MONMODE
+echo -e "   ${RED}v1.2${NC}"
 }
 
 #######################
 # 1) Create NIC mon0. #
 
-function MONMODE {
+function MONMOD {
 
 # The name of the virtual nic the will be created
 
@@ -190,19 +188,18 @@ function MONMODE {
 # User select the real nic to be used
 
 	read -e -p $'\x0a# Select the network card you want to use [enter for wlan0]: ' nicreal
-
-	if [ -z "$nicreal" ] || [ "$nicreal" = "wlan0" ]; then
+	
+	if [ -z "$nicreal" ] ; then
 		nicreal=wlan0
+	fi
+	
+	while ! iwconfig 2>/dev/null | grep -w -q $nicreal 2>/dev/null; do
+		read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
+	done
 
-		# Kill all process the could couse trouble to aircrack family
+	# Kill all process the could couse trouble to aircrack family
 	
 		airmon-ng check kill &> /dev/null &
-	else
-		while ! iwconfig 2>/dev/null | grep -w -q $nicreal ; do
-			read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
-		done
-	fi
-
 
 	
 # Check if exist the mon0 nic, else, create and activate
@@ -226,7 +223,6 @@ function GERTAB {
 	echo -e "\n# 1) When you find the target network, press CTRL+C.  #"
 	airodumpall
 	name=target
-	EDTCHN
 
 }
 
@@ -297,7 +293,6 @@ cat auxfile4 auxfile3 > auxfile5
 			fi	
 	fi
 
-	ESPSCN
 }
 
 #############################################
@@ -318,7 +313,6 @@ function ESPSCN {
 
 	getclients
 
-	ATTAIR
 }
 
 ########################################
@@ -353,14 +347,13 @@ function ATTAIR {
 # Delete MAC clients table if all right
 
 	rm -rf $mac
-	WORDLIST
 
 }
 
 #################################################
 # 6) Search wordlist and verify if don't exist. #
 
-function WORDLIST {
+function WORLST {
 
 	read -e -p $'\x0a# 4) Type the wordlist full path: #\x0a'"$userpath " path 
 
@@ -375,13 +368,12 @@ function WORDLIST {
 		fi
 	done
 
-	AIRCRACK
 }
 
 ##################################
 # 7) Decryptograph the password. #
 
-function AIRCRACK {
+function ACRACK {
 
 # Start the wordlist method attack
 
@@ -414,7 +406,6 @@ function AIRCRACK {
 # To prevent that aircrack-ng finish the script by itself
 
 	read -p $'To finish, press ENTER... \x0a'
-	END
 
 }
 
@@ -471,4 +462,18 @@ echo "############################################################"
 	exit
 
 }
-setresolution
+
+# Main structure to call all the functions one-by-one
+MAIN() {
+	SETRES
+	INTROD
+	MONMOD
+	GERTAB
+	EDTCHN
+	ESPSCN
+	ATTAIR
+	WORLST
+	ACRACK
+	END
+}
+MAIN
